@@ -1,0 +1,277 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// ============================================
+// 用户与认证相关模型
+// ============================================
+
+// 用户模型
+model User {
+  id               String             @id @default(cuid())
+  email            String             @unique
+  emailVerified    DateTime?
+  name             String?
+  password         String?            // 邮箱密码登录时使用
+  image            String?
+  preferences      Json?              // 训练偏好配置
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  
+  accounts         Account[]
+  sessions         Session[]
+  cognitiveProfile CognitiveProfile?
+  workoutSessions  WorkoutSession[]
+  
+  @@map("users")
+}
+
+// NextAuth 账户关联 (OAuth)
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+// NextAuth 会话
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("sessions")
+}
+
+// NextAuth 验证令牌
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ============================================
+// 认知能力画像
+// ============================================
+
+model CognitiveProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  
+  // 五大能力维度 (0-100)
+  attention   Int      @default(50)  // 注意力/专注力
+  memory      Int      @default(50)  // 记忆力
+  logic       Int      @default(50)  // 逻辑推理
+  expression  Int      @default(50)  // 语言表达
+  metacog     Int      @default(50)  // 元认知
+  
+  // 历史趋势数据 JSON 数组
+  // [{date: "2024-01-01", attention: 52, memory: 48, ...}]
+  history     Json?
+  
+  // 最近一次评估时间
+  lastAssessedAt DateTime?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("cognitive_profiles")
+}
+
+// ============================================
+// 训练相关模型
+// ============================================
+
+// 训练模式枚举
+enum WorkoutMode {
+  DAILY      // 每日训练
+  FOCUS      // 深度训练
+  KNOWLEDGE  // 知识双修
+  FREE       // 自由模式
+  ASSESSMENT // 脑力评估
+}
+
+// 训练会话
+model WorkoutSession {
+  id          String       @id @default(cuid())
+  userId      String
+  mode        WorkoutMode
+  
+  // 训练计划 (由AI生成)
+  // {steps: [{step_id, title, target_abilities, mode, estimated_minutes, exercise_type, difficulty, brief_description}]}
+  plan        Json
+  
+  // 用户输入的上下文
+  userMood    Int?         // 1-10 精力评分
+  userGoal    String?      @db.Text // 用户本次目标
+  duration    Int?         // 预计时长(分钟)
+  
+  // 训练结果总结
+  // {totalTasks, completedTasks, averageScore, totalTimeMinutes, abilitiesWorked, highlights, improvements, aiSummary}
+  summary     Json?
+  
+  // 时间记录
+  startedAt   DateTime     @default(now())
+  completedAt DateTime?
+  
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks       TaskInstance[]
+  reflection  Reflection?
+  
+  @@index([userId])
+  @@index([startedAt])
+  @@map("workout_sessions")
+}
+
+// ============================================
+// 题目相关模型
+// ============================================
+
+// 题目模板 (预设的题目类型)
+model TaskTemplate {
+  id              String   @id @default(cuid())
+  
+  // 基础信息
+  name            String   // 模板名称
+  description     String?  @db.Text // 模板描述
+  
+  // 能力标签 JSON 数组 ["attention", "memory", "logic", ...]
+  abilityTags     Json
+  
+  // 难度范围
+  difficultyMin   Int      @default(1)
+  difficultyMax   Int      @default(5)
+  
+  // 任务类型
+  // number_span, digit_operation, logic_puzzle, analogy, deduction, 
+  // stroop, selective_attention, reading_recall, expression, explanation, 
+  // metacog_reflection, creative, general
+  type            String
+  
+  // Prompt模板
+  promptTemplate  String   @db.Text
+  
+  // 评分标准 JSON
+  // {dimensions: [{name, description, weight}], scoringScale: {0: "", 1: "", ...}, typicalMistakes: []}
+  evaluationRubric Json
+  
+  // 推荐时间(秒)
+  suggestedTime   Int?
+  
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  instances       TaskInstance[]
+  
+  @@index([type])
+  @@index([isActive])
+  @@map("task_templates")
+}
+
+// 题目实例 (用户实际做的每道题)
+model TaskInstance {
+  id              String         @id @default(cuid())
+  sessionId       String
+  templateId      String?
+  
+  // 具体题目内容
+  prompt          String         @db.Text     // 题干
+  answer          String?        @db.Text     // 参考答案
+  explanation     String?        @db.Text     // 解析
+  
+  // 难度和能力
+  difficulty      Int            @default(3)  // 1-5
+  abilities       Json           // ["logic", "attention"]
+  
+  // 用户作答
+  userAnswer      String?        @db.Text
+  
+  // AI评估结果
+  score           Int?           // 0-100
+  scoreLabel      String?        // 完全正确/基本正确/部分正确/错误
+  // {overallScore, dimensionScores: [{name, score, comment}], errorTypes, strengths, improvements, nextTip}
+  feedback        Json?
+  
+  // 时间记录
+  startedAt       DateTime       @default(now())
+  answeredAt      DateTime?
+  timeSpent       Int?           // 实际用时(秒)
+  
+  session         WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  template        TaskTemplate?  @relation(fields: [templateId], references: [id])
+  
+  @@index([sessionId])
+  @@index([templateId])
+  @@map("task_instances")
+}
+
+// ============================================
+// 反思记录
+// ============================================
+
+model Reflection {
+  id              String         @id @default(cuid())
+  sessionId       String         @unique
+  
+  // 用户反思内容
+  userText        String?        @db.Text
+  
+  // AI总结
+  aiSummary       String?        @db.Text
+  
+  // 结构化反思数据
+  // {hardestTask, bestStrategy, nextImprovement, emotionalState}
+  data            Json?
+  
+  createdAt       DateTime       @default(now())
+  
+  session         WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  @@map("reflections")
+}
+
+// ============================================
+// 聊天历史 (可选，用于持久化对话)
+// ============================================
+
+model ChatMessage {
+  id          String   @id @default(cuid())
+  sessionId   String
+  role        String   // user, assistant, system
+  content     String   @db.Text
+  metadata    Json?    // {agentType, phase, exerciseId, isExercise, etc.}
+  createdAt   DateTime @default(now())
+  
+  @@index([sessionId])
+  @@index([createdAt])
+  @@map("chat_messages")
+}

@@ -1,15 +1,8 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-const plusJakarta = Plus_Jakarta_Sans({
-  variable: "--font-plus-jakarta",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-jetbrains",
+const inter = Inter({
   subsets: ["latin"],
   display: "swap",
 });
@@ -33,9 +26,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN" className="dark">
-      <body
-        className={`${plusJakarta.variable} ${jetbrainsMono.variable} antialiased min-h-screen`}
-      >
+      <body className={`${inter.className} antialiased min-h-screen`}>
         {children}
       </body>
     </html>

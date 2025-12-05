@@ -63,8 +63,7 @@ export default function FreeWorkoutPage() {
           {durations.map((duration) => (
             <Card
               key={duration.value}
-              hover
-              className={`cursor-pointer transition-all ${
+              className={`cursor-pointer transition-all hover:border-primary/50 ${
                 selectedDuration === duration.value
                   ? "border-primary ring-2 ring-primary/20"
                   : ""
@@ -81,7 +80,7 @@ export default function FreeWorkoutPage() {
       </div>
 
       {/* 开始按钮 */}
-      <Button size="lg" variant="gradient" className="w-full" onClick={handleStart}>
+      <Button size="lg" className="w-full" onClick={handleStart}>
         开始自由训练
       </Button>
     </div>

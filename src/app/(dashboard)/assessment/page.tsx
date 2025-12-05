@@ -96,7 +96,7 @@ export default function AssessmentPage() {
       </Card>
 
       {/* 开始按钮 */}
-      <Button size="lg" variant="gradient" className="w-full" onClick={handleStart}>
+      <Button size="lg" className="w-full" onClick={handleStart}>
         开始评估
         <ArrowRight className="w-5 h-5 ml-2" />
       </Button>

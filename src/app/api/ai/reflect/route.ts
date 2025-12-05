@@ -9,6 +9,7 @@ import {
   generateMotivation,
 } from "@/lib/ai/langchain/agents";
 import type { ReflectionResult } from "@/types/workout";
+import type { ChatMessage } from "@/types/ai";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -59,10 +60,17 @@ export async function POST(request: NextRequest) {
 
       case "dialogue":
         // 引导反思对话
+        const history: ChatMessage[] = ((data.history as Array<{ role: string; content: string }>) || []).map((msg, index) => ({
+          id: `msg_${index}`,
+          role: msg.role as any,
+          content: msg.content,
+          timestamp: new Date(),
+        }));
+
         result = await guideReflectionDialogue(
           data.userInput as string,
           context,
-          (data.history as Array<{ role: string; content: string }>) || []
+          history
         );
         break;
 

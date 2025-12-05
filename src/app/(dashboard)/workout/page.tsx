@@ -62,7 +62,7 @@ export default function WorkoutPage() {
         {workoutModes.map((mode) => {
           const Icon = mode.icon;
           return (
-            <Card key={mode.id} hover className="overflow-hidden">
+            <Card key={mode.id} className="overflow-hidden hover:border-primary/50 transition-colors">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div
@@ -94,7 +94,7 @@ export default function WorkoutPage() {
                   ))}
                 </div>
                 <Link href={mode.href}>
-                  <Button className="w-full" variant={mode.id === "daily" ? "gradient" : "default"}>
+                  <Button className="w-full" variant={mode.id === "daily" ? "default" : "outline"}>
                     开始训练
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>

@@ -8,7 +8,6 @@ import { ChatInterface } from "@/components/chat/chat-interface";
 import { WorkoutProgress } from "@/components/workout/workout-progress";
 import { useWorkoutStore } from "@/stores/workout-store";
 import type { ChatMessage } from "@/types/ai";
-import { generateId } from "@/lib/utils";
 
 export default function DailyWorkoutPage() {
   const router = useRouter();
@@ -22,6 +21,7 @@ export default function DailyWorkoutPage() {
     completedTasks,
     startSession,
     addMessage,
+    appendMessageContent,
     setLoading,
     setPhase,
     reset,
@@ -73,57 +73,92 @@ export default function DailyWorkoutPage() {
   };
 
   // 发送消息
-  const handleSendMessage = useCallback(async (message: string) => {
-    // 添加用户消息
-    addMessage({
-      role: "user",
-      content: message,
-    });
-
-    setLoading(true);
-
-    try {
-      const response = await fetch("/api/ai/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message,
-          history: messages.map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
-          context: {
-            currentPhase: phase,
-            sessionId,
-          },
-        }),
+  const handleSendMessage = useCallback(
+    async (message: string) => {
+      // 添加用户消息
+      addMessage({
+        role: "user",
+        content: message,
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        
-        addMessage({
-          role: "assistant",
-          content: data.content,
+      setLoading(true);
+
+      const assistantId = addMessage({
+        role: "assistant",
+        content: "",
+      });
+
+      try {
+        const response = await fetch("/api/ai/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message,
+            stream: true,
+            history: messages.map((m) => ({
+              role: m.role,
+              content: m.content,
+            })),
+            context: {
+              currentPhase: phase,
+              sessionId,
+            },
+          }),
         });
 
-        // 更新阶段
-        if (data.phase && data.phase !== phase) {
-          setPhase(data.phase);
+        if (!response.ok || !response.body) {
+          throw new Error("请求失败");
         }
-      } else {
-        throw new Error("请求失败");
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed) continue;
+            try {
+              const chunk = JSON.parse(trimmed);
+              if (chunk.content) {
+                appendMessageContent(assistantId, chunk.content);
+              }
+              if (chunk.done) {
+                if (chunk.suggestedPhase && chunk.suggestedPhase !== phase) {
+                  setPhase(chunk.suggestedPhase);
+                }
+              }
+            } catch (err) {
+              console.error("解析流式响应失败:", err, trimmed);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("发送消息失败:", error);
+        appendMessageContent(
+          assistantId,
+          "抱歉，我遇到了一些问题。请稍后再试，或者重新开始训练。"
+        );
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("发送消息失败:", error);
-      addMessage({
-        role: "assistant",
-        content: "抱歉，我遇到了一些问题。请稍后再试，或者重新开始训练。",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [messages, phase, sessionId, addMessage, setLoading, setPhase]);
+    },
+    [
+      messages,
+      phase,
+      sessionId,
+      addMessage,
+      appendMessageContent,
+      setLoading,
+      setPhase,
+    ]
+  );
 
   // 退出训练
   const handleExit = () => {

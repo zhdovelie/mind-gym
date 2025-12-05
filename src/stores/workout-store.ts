@@ -35,7 +35,10 @@ interface WorkoutState {
   setPhase: (phase: WorkoutPhase) => void;
   setPlan: (plan: WorkoutPlan) => void;
   
-  addMessage: (message: Omit<ChatMessage, "id" | "timestamp">) => void;
+  addMessage: (
+    message: Omit<ChatMessage, "id" | "timestamp"> & { id?: string }
+  ) => string;
+  appendMessageContent: (id: string, delta: string) => void;
   setLoading: (loading: boolean) => void;
   
   setCurrentTask: (task: GenerateExerciseResponse | null) => void;
@@ -86,13 +89,23 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
   setPlan: (plan) => set({ plan }),
 
   addMessage: (message) => {
+    const id = message.id || generateId();
     const newMessage: ChatMessage = {
       ...message,
-      id: generateId(),
+      id,
       timestamp: new Date(),
     };
     set((state) => ({
       messages: [...state.messages, newMessage],
+    }));
+    return id;
+  },
+
+  appendMessageContent: (id, delta) => {
+    set((state) => ({
+      messages: state.messages.map((msg) =>
+        msg.id === id ? { ...msg, content: msg.content + delta } : msg
+      ),
     }));
   },
 

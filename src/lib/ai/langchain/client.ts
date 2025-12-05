@@ -22,16 +22,20 @@ interface LangChainConfig {
   maxTokens: number;
 }
 
-// 获取配置
+// 获取配置（兼容 AI_API_KEY / OPENAI_API_KEY，以及自定义 baseURL）
 function getConfig(): LangChainConfig {
-  const apiKey = process.env.AI_API_KEY;
-  const baseUrl = process.env.AI_BASE_URL || "https://api.openai.com/v1";
-  const defaultModel = process.env.AI_DEFAULT_MODEL || "gpt-4o-mini";
+  const apiKey =
+    process.env.AI_API_KEY?.trim() || process.env.OPENAI_API_KEY?.trim();
+  const baseUrl =
+    process.env.AI_BASE_URL?.trim() ||
+    process.env.OPENAI_BASE_URL?.trim() ||
+    "https://api.openai.com/v1";
+  const defaultModel = process.env.AI_DEFAULT_MODEL?.trim() || "gpt-4o-mini";
   const temperature = parseFloat(process.env.AI_TEMPERATURE || "0.7");
   const maxTokens = parseInt(process.env.AI_MAX_TOKENS || "2048");
 
   if (!apiKey) {
-    throw new Error("AI_API_KEY 环境变量未设置");
+    throw new Error("AI_API_KEY 或 OPENAI_API_KEY 环境变量未设置");
   }
 
   return { apiKey, baseUrl, defaultModel, temperature, maxTokens };
@@ -47,7 +51,7 @@ export function createChatModel(options?: {
   const config = getConfig();
 
   return new ChatOpenAI({
-    openAIApiKey: config.apiKey,
+    apiKey: config.apiKey,
     configuration: {
       baseURL: config.baseUrl,
     },

@@ -83,8 +83,7 @@ export default function FocusWorkoutPage() {
           return (
             <Card
               key={ability.id}
-              hover
-              className={`cursor-pointer transition-all ${
+              className={`cursor-pointer transition-all hover:border-primary/50 ${
                 isSelected ? "border-primary ring-2 ring-primary/20" : ""
               }`}
               onClick={() => setSelectedAbility(ability.id)}

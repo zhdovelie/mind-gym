@@ -9,10 +9,10 @@ import {
   HumanMessage,
   type BaseMessage,
 } from "@langchain/core/messages";
-import { StructuredOutputParser } from "langchain/output_parsers";
+import { StructuredOutputParser } from "@langchain/core/output_parsers";
 import { z } from "zod";
 import { createChatModel, convertToLangChainMessages } from "../client";
-import { buildSRLSystemPrompt } from "../../prompts/srl";
+import { SRL_SYSTEM_PROMPT, buildReflectionPrompt } from "../../prompts/srl";
 import type { AgentContext, ChatMessage } from "@/types/ai";
 import type { ReflectionResult } from "@/types/workout";
 
@@ -69,7 +69,7 @@ export interface SRLOptions {
  * 生成训练反思
  */
 export async function generateReflection(options: SRLOptions): Promise<ReflectionResult> {
-  const systemPrompt = buildSRLSystemPrompt(options.context);
+  const systemPrompt = SRL_SYSTEM_PROMPT;
   const chatModel = createChatModel({
     temperature: 0.6,
     maxTokens: 2048,
@@ -153,7 +153,7 @@ export async function guideReflectionDialogue(
   metacognitiveQuestion?: string;
   insightDetected?: string;
 }> {
-  const systemPrompt = buildSRLSystemPrompt(context);
+  const systemPrompt = SRL_SYSTEM_PROMPT;
   const chatModel = createChatModel({
     temperature: 0.7,
     maxTokens: 1024,
@@ -207,7 +207,7 @@ export async function generateLearningPlan(
     consistencyRate: number;
   }
 ): Promise<z.infer<typeof learningPlanSchema>> {
-  const systemPrompt = buildSRLSystemPrompt(context);
+  const systemPrompt = SRL_SYSTEM_PROMPT;
   const chatModel = createChatModel({
     temperature: 0.5,
     maxTokens: 2048,
@@ -263,7 +263,7 @@ export async function generateSelfAssessmentQuestions(
   context: AgentContext,
   focus?: string
 ): Promise<string[]> {
-  const systemPrompt = buildSRLSystemPrompt(context);
+  const systemPrompt = SRL_SYSTEM_PROMPT;
   const chatModel = createChatModel({
     temperature: 0.7,
     maxTokens: 1024,

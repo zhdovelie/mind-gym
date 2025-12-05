@@ -28,14 +28,18 @@ interface GenerateTextResponse {
   };
 }
 
-// 获取配置
+// 获取配置（兼容 AI_API_KEY / OPENAI_API_KEY，以及自定义 baseURL）
 function getConfig(): AIClientConfig {
-  const apiKey = process.env.AI_API_KEY;
-  const baseUrl = process.env.AI_BASE_URL || "https://api.openai.com/v1";
-  const defaultModel = process.env.AI_DEFAULT_MODEL || "gpt-4o-mini";
+  const apiKey =
+    process.env.AI_API_KEY?.trim() || process.env.OPENAI_API_KEY?.trim();
+  const baseUrl =
+    process.env.AI_BASE_URL?.trim() ||
+    process.env.OPENAI_BASE_URL?.trim() ||
+    "https://api.openai.com/v1";
+  const defaultModel = process.env.AI_DEFAULT_MODEL?.trim() || "gpt-4o-mini";
 
   if (!apiKey) {
-    throw new Error("AI_API_KEY 环境变量未设置");
+    throw new Error("AI_API_KEY 或 OPENAI_API_KEY 环境变量未设置");
   }
 
   return { apiKey, baseUrl, defaultModel };

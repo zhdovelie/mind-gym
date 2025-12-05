@@ -147,7 +147,7 @@ export const updateUserProfileTool = tool(
     description: "更新用户的认知能力画像",
     schema: z.object({
       userId: z.string().describe("用户ID"),
-      updates: z.record(z.number()).describe("能力值更新"),
+      updates: z.record(z.string(), z.number()).describe("能力值更新"),
     }),
   }
 );

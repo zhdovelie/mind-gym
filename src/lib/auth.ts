@@ -5,7 +5,7 @@ import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { prisma } from "./db";
-import type { OAuthConfig, OAuthUserConfig } from "next-auth/providers";
+import type { Adapter } from "next-auth/adapters";
 
 /**
  * LinuxDo OAuth Provider
@@ -26,52 +26,9 @@ interface LinuxDoProfile {
   }>;
 }
 
-function LinuxDo<P extends LinuxDoProfile>(
-  options: OAuthUserConfig<P>
-): OAuthConfig<P> {
-  return {
-    id: "linuxdo",
-    name: "LinuxDo",
-    type: "oauth",
-    
-    // OAuth2 端点配置
-    authorization: {
-      url: "https://connect.linux.do/oauth2/authorize",
-      params: {
-        scope: "read",
-        response_type: "code",
-      },
-    },
-    token: {
-      url: "https://connect.linux.do/oauth2/token",
-    },
-    userinfo: {
-      url: "https://connect.linux.do/api/user",
-    },
-    
-    // 用户信息映射
-    profile(profile) {
-      return {
-        id: String(profile.id),
-        name: profile.name || profile.username,
-        email: profile.email,
-        image: profile.avatar_url,
-      };
-    },
-    
-    // 样式配置（用于登录按钮）
-    style: {
-      logo: "https://linux.do/uploads/default/original/3X/9/d/9dd49731091ce8656e94433a26a3ef36062b3994.png",
-      bg: "#f97316",
-      text: "#fff",
-    },
-    
-    ...options,
-  };
-}
-
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  // @ts-expect-error - Prisma 7 type compatibility with @auth/prisma-adapter
+  adapter: PrismaAdapter(prisma) as Adapter,
   session: {
     strategy: "jwt",
   },
@@ -91,10 +48,45 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       clientSecret: process.env.GOOGLE_SECRET,
     }),
     // LinuxDo OAuth (自定义)
-    LinuxDo({
+    {
+      id: "linuxdo",
+      name: "LinuxDo",
+      type: "oauth",
       clientId: process.env.LINUXDO_CLIENT_ID,
       clientSecret: process.env.LINUXDO_CLIENT_SECRET,
-    }),
+      
+      // OAuth2 端点配置
+      authorization: {
+        url: "https://connect.linux.do/oauth2/authorize",
+        params: {
+          scope: "read",
+          response_type: "code",
+        },
+      },
+      token: {
+        url: "https://connect.linux.do/oauth2/token",
+      },
+      userinfo: {
+        url: "https://connect.linux.do/api/user",
+      },
+      
+      // 用户信息映射
+      profile(profile: LinuxDoProfile) {
+        return {
+          id: String(profile.id),
+          name: profile.name || profile.username,
+          email: profile.email,
+          image: profile.avatar_url,
+        };
+      },
+      
+      // 样式配置（用于登录按钮）
+      style: {
+        logo: "https://linux.do/uploads/default/original/3X/9/d/9dd49731091ce8656e94433a26a3ef36062b3994.png",
+        bg: "#f97316",
+        text: "#fff",
+      },
+    },
     // 邮箱密码登录
     Credentials({
       name: "credentials",
@@ -160,11 +152,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       return session;
     },
-    async signIn({ user, account, profile }) {
+    async signIn({ account, profile }) {
       // 可以在这里添加额外的登录验证逻辑
       // 例如：检查 LinuxDo 用户的信任等级
-      if (account?.provider === "linuxdo") {
-        const linuxdoProfile = profile as LinuxDoProfile;
+      if (account?.provider === "linuxdo" && profile) {
+        const linuxdoProfile = profile as unknown as LinuxDoProfile;
         // 可选：只允许特定信任等级的用户登录
         // if (linuxdoProfile.trust_level < 1) {
         //   return false;

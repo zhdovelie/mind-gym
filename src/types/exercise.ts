@@ -89,6 +89,52 @@ export interface GenerateExerciseResponse {
   evaluationRubric: EvaluationRubric;
 }
 
+// 题目接口
+export interface Exercise {
+  id: string;
+  type: ExerciseType;
+  prompt: string;
+  data?: any;
+  abilities: string[];
+  difficulty: number;
+  suggestedTime?: number;
+  hints?: string[];
+  solution?: string;
+}
+
+// 生成的题目
+export interface GeneratedExercise extends Exercise {
+  generatedAt: Date;
+}
+
+// 评估结果
+export interface EvaluationResult {
+  exerciseId: string;
+  userAnswer: string;
+  timeSpent?: number;
+  evaluatedAt: Date;
+  overallScore: number;
+  label: string;
+  dimensions?: {
+    accuracy: number;
+    completeness: number;
+    creativity?: number;
+    speed?: number;
+  };
+  strengthsForUser: string;
+  improvementsForUser: string;
+  nextTimeTipForUser: string;
+  feedbackToUser: string;
+  cognitiveInsights?: {
+    attention?: number;
+    memory?: number;
+    logic?: number;
+    expression?: number;
+    metacog?: number;
+  };
+  nextHint?: string;
+}
+
 // 评估请求
 export interface EvaluateAnswerRequest {
   prompt: string;

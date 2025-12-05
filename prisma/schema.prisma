@@ -2,11 +2,12 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "mysql" // 默认值，将被 prisma.config.ts 覆盖
 }
 
 // ============================================
@@ -40,12 +41,12 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
   
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -131,7 +132,7 @@ model WorkoutSession {
   
   // 用户输入的上下文
   userMood    Int?         // 1-10 精力评分
-  userGoal    String?      @db.Text // 用户本次目标
+  userGoal    String?      // 用户本次目标
   duration    Int?         // 预计时长(分钟)
   
   // 训练结果总结
@@ -161,7 +162,7 @@ model TaskTemplate {
   
   // 基础信息
   name            String   // 模板名称
-  description     String?  @db.Text // 模板描述
+  description     String?  // 模板描述
   
   // 能力标签 JSON 数组 ["attention", "memory", "logic", ...]
   abilityTags     Json
@@ -177,7 +178,7 @@ model TaskTemplate {
   type            String
   
   // Prompt模板
-  promptTemplate  String   @db.Text
+  promptTemplate  String
   
   // 评分标准 JSON
   // {dimensions: [{name, description, weight}], scoringScale: {0: "", 1: "", ...}, typicalMistakes: []}
@@ -204,16 +205,16 @@ model TaskInstance {
   templateId      String?
   
   // 具体题目内容
-  prompt          String         @db.Text     // 题干
-  answer          String?        @db.Text     // 参考答案
-  explanation     String?        @db.Text     // 解析
+  prompt          String         // 题干
+  answer          String?        // 参考答案
+  explanation     String?        // 解析
   
   // 难度和能力
   difficulty      Int            @default(3)  // 1-5
   abilities       Json           // ["logic", "attention"]
   
   // 用户作答
-  userAnswer      String?        @db.Text
+  userAnswer      String?
   
   // AI评估结果
   score           Int?           // 0-100
@@ -243,10 +244,10 @@ model Reflection {
   sessionId       String         @unique
   
   // 用户反思内容
-  userText        String?        @db.Text
-  
+  userText        String?
+
   // AI总结
-  aiSummary       String?        @db.Text
+  aiSummary       String?
   
   // 结构化反思数据
   // {hardestTask, bestStrategy, nextImprovement, emotionalState}
@@ -267,7 +268,7 @@ model ChatMessage {
   id          String   @id @default(cuid())
   sessionId   String
   role        String   // user, assistant, system
-  content     String   @db.Text
+  content     String
   metadata    Json?    // {agentType, phase, exerciseId, isExercise, etc.}
   createdAt   DateTime @default(now())
   

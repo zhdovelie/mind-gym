@@ -59,7 +59,7 @@ export function FeedbackCard({
               </div>
             </div>
           </div>
-          <Progress value={score} variant={getProgressVariant()} className="mt-3" />
+          <Progress value={score} className="mt-3" />
         </CardHeader>
 
         <CardContent className="space-y-4">

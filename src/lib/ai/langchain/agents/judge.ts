@@ -9,11 +9,11 @@ import {
   HumanMessage,
   type BaseMessage,
 } from "@langchain/core/messages";
-import { StructuredOutputParser } from "langchain/output_parsers";
+import { StructuredOutputParser } from "@langchain/core/output_parsers";
 import { z } from "zod";
 import { createChatModel } from "../client";
-import { buildJudgeSystemPrompt } from "../../prompts/judge";
-import type { Exercise, EvaluationResult, EvaluationDimensions } from "@/types/exercise";
+import { JUDGE_SYSTEM_PROMPT, buildEvaluationPrompt } from "../../prompts/judge";
+import type { Exercise, EvaluationResult } from "@/types/exercise";
 import type { AgentContext } from "@/types/ai";
 
 // 评估输出 Schema
@@ -26,6 +26,7 @@ const evaluationOutputSchema = z.object({
     creativity: z.number().min(0).max(100).optional().describe("创意性得分"),
     speed: z.number().min(0).max(100).optional().describe("速度得分"),
   }),
+  feedbackToUser: z.string().describe("给用户的综合反馈"),
   strengthsForUser: z.string().describe("给用户的优点反馈"),
   improvementsForUser: z.string().describe("给用户的改进建议"),
   nextTimeTipForUser: z.string().describe("下次训练建议"),
@@ -54,7 +55,7 @@ export interface JudgeOptions {
  * 评估用户回答
  */
 export async function evaluateAnswer(options: JudgeOptions): Promise<EvaluationResult> {
-  const systemPrompt = buildJudgeSystemPrompt(options);
+  const systemPrompt = JUDGE_SYSTEM_PROMPT;
   const chatModel = createChatModel({
     temperature: 0.3, // 评估用较低温度保证一致性
     maxTokens: 2048,

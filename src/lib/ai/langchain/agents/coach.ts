@@ -87,7 +87,13 @@ export async function* streamCoachAgent(
   userMessage: string,
   context: AgentContext,
   history: ChatMessage[]
-): AsyncGenerator<{ content: string; done: boolean }> {
+): AsyncGenerator<{
+  content: string;
+  done: boolean;
+  suggestedPhase?: WorkoutPhase;
+  shouldGenerateExercise?: boolean;
+  shouldReflect?: boolean;
+}> {
   const systemPrompt = buildCoachSystemPrompt(context);
   const chatModel = createChatModel({
     temperature: 0.7,
@@ -114,7 +120,9 @@ export async function* streamCoachAgent(
     }
   }
 
-  yield { content: "", done: true };
+  // 结束时追加元数据，便于前端更新阶段/状态
+  const suggestedAction = analyzeCoachResponse(fullContent, context.currentPhase);
+  yield { content: "", done: true, ...suggestedAction };
 }
 
 /**

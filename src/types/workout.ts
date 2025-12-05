@@ -98,6 +98,18 @@ export interface ReflectionData {
   emotionalState?: string;
 }
 
+// SRL反思结果
+export interface ReflectionResult {
+  summary: string;
+  highlights: string[];
+  challenges: string[];
+  cognitiveInsights: string;
+  recommendations: string[];
+  nextSteps: string;
+  metacognitivePrompts?: string[];
+  createdAt?: Date;
+}
+
 // 题目实例
 export interface TaskInstance {
   id: string;

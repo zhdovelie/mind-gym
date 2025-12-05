@@ -160,7 +160,7 @@ export default async function HomePage() {
         <h2 className="text-xl font-bold mb-4">训练模式</h2>
         <div className="grid md:grid-cols-2 gap-4">
           <Link href="/workout/focus">
-            <Card hover className="h-full">
+            <Card className="h-full hover:border-primary/50 transition-colors cursor-pointer">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -177,7 +177,7 @@ export default async function HomePage() {
             </Card>
           </Link>
           <Link href="/workout/knowledge">
-            <Card hover className="h-full">
+            <Card className="h-full hover:border-primary/50 transition-colors cursor-pointer">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-success/10 flex items-center justify-center">
@@ -194,7 +194,7 @@ export default async function HomePage() {
             </Card>
           </Link>
           <Link href="/workout/free">
-            <Card hover className="h-full">
+            <Card className="h-full hover:border-primary/50 transition-colors cursor-pointer">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-warning/10 flex items-center justify-center">
@@ -211,7 +211,7 @@ export default async function HomePage() {
             </Card>
           </Link>
           <Link href="/assessment">
-            <Card hover className="h-full">
+            <Card className="h-full hover:border-primary/50 transition-colors cursor-pointer">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-info/10 flex items-center justify-center">

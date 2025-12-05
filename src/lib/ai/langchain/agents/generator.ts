@@ -9,10 +9,10 @@ import {
   HumanMessage,
   type BaseMessage,
 } from "@langchain/core/messages";
-import { StructuredOutputParser } from "langchain/output_parsers";
+import { StructuredOutputParser } from "@langchain/core/output_parsers";
 import { z } from "zod";
 import { createChatModel, generateJsonWithLangChain } from "../client";
-import { buildGeneratorSystemPrompt, getExerciseTypePrompt } from "../../prompts/generator";
+import { GENERATOR_SYSTEM_PROMPT, EXERCISE_TYPE_TEMPLATES } from "../../prompts/generator";
 import type { Exercise, ExerciseType, GeneratedExercise } from "@/types/exercise";
 import type { AgentContext } from "@/types/ai";
 
@@ -20,11 +20,19 @@ import type { AgentContext } from "@/types/ai";
 const exerciseOutputSchema = z.object({
   id: z.string().describe("题目唯一标识"),
   type: z.enum([
-    "memory_recall",
-    "pattern_recognition",
-    "logic_reasoning",
-    "verbal_fluency",
-    "creative_thinking",
+    "number_span",
+    "digit_operation",
+    "logic_puzzle",
+    "analogy",
+    "deduction",
+    "stroop",
+    "selective_attention",
+    "reading_recall",
+    "expression",
+    "explanation",
+    "metacog_reflection",
+    "creative",
+    "general",
   ]).describe("题目类型"),
   prompt: z.string().describe("题目内容"),
   data: z.any().optional().describe("题目附加数据"),
@@ -54,8 +62,8 @@ export interface GeneratorOptions {
 export async function generateExercise(
   options: GeneratorOptions
 ): Promise<GeneratedExercise> {
-  const systemPrompt = buildGeneratorSystemPrompt(options);
-  const typePrompt = options.type ? getExerciseTypePrompt(options.type) : "";
+  const systemPrompt = GENERATOR_SYSTEM_PROMPT;
+  const typePrompt = options.type ? EXERCISE_TYPE_TEMPLATES[options.type] || "" : "";
 
   const generatePrompt = `请生成一道认知训练题目。
 
@@ -243,11 +251,11 @@ export async function generateFocusedExercise(
   context?: AgentContext
 ): Promise<GeneratedExercise> {
   const abilityTypeMap: Record<string, ExerciseType[]> = {
-    attention: ["pattern_recognition"],
-    memory: ["memory_recall"],
-    logic: ["logic_reasoning"],
-    expression: ["verbal_fluency"],
-    creativity: ["creative_thinking"],
+    attention: ["selective_attention"],
+    memory: ["number_span"],
+    logic: ["logic_puzzle"],
+    expression: ["expression"],
+    creativity: ["creative"],
   };
 
   const preferredTypes = abilityTypeMap[targetAbility] || [];
